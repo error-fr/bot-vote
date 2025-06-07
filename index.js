@@ -8,7 +8,11 @@ const { sleep, mainModule, getUserInput } = require('./functions/main.js');
 const { sendToDiscord } = require('./functions/discord.js');
 
 async function scriptVote() {
-    const browser = await puppeteer.launch({ headless: true });
+    const browser = await puppeteer.launch({
+        headless: process.env.HEADLESS,
+        // executablePath: '/usr/bin/chromium-browser', // Décommentez si vous avez besoin de spécifier le chemin de Chromium (par exemple sur un Raspberry/serveur Linux)
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
     const page = await browser.newPage();
 
     await page.goto(process.env.URL_VOTE_TOPSERVEURS + '?pseudo=' + process.env.URL_VOTE_TOPSERVEURS_NAME, {
