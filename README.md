@@ -22,6 +22,9 @@ DISCORD_ID = '' # ID Discord qui sera ping pour les Webhooks en cas d'erreur
 DISCORD_WEBHOOK_URL = '' # Webhook utilisé pour envoyer les erreurs
 DISCORD_WEBHOOK_NAME = 'BOT Vote' # Nom du Webhook
 
+CRON_TIME = '0 */2 * * *' # Heure d'exécution du cron, ici toutes les 2 heures
+HEADLESS = false # True : Le navigateur sera lancé en mode headless (sans interface graphique), False : Le navigateur sera lancé avec une interface graphique
+
 CHATGPT_API_KEY = '' # Clé API ChatGPT
 ```
 
