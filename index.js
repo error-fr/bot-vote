@@ -113,9 +113,10 @@ let lastRandomDelay = 0;
 (async () => {
     console.log('Script de vote prêt !');
 
-    scriptVote().catch(error => {
-        console.error('Erreur lors de l\'exécution du script de vote :', error);
-    });
+    // Décommentez la ligne suivante pour exécuter le script de vote immédiatement (pour les tests)
+    // scriptVote().catch(error => {
+    //     console.error('Erreur lors de l\'exécution du script de vote :', error);
+    // });
 
     // Demander à l'utilisateur s'il veut définir un délai par défaut
     const response = await getUserInput('Souhaitez-vous définir un délai par défaut ? (nombre de minutes, ou Entrée pour ignorer): ');
