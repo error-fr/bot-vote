@@ -28,7 +28,14 @@ async function scriptVote() {
 
     console.log("Pop-up cookies passée. Début de la recherche du captcha...");
 
-    const [ successText, captcha ] = await mainModule(browser, page);
+    let mainResult = await mainModule(browser, page);
+    let successText, captcha;
+    if (Array.isArray(mainResult)) {
+        [successText, captcha] = mainResult;
+    } else {
+        successText = mainResult;
+        captcha = null;
+    }
 
     // if (!successText) {
     //     await browser.close();
