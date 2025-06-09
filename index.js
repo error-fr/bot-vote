@@ -45,9 +45,7 @@ async function scriptVote() {
 
     let retryCount = 0;
 
-    if (successText.includes('Vérifié avec succès')) {
-        console.log('Captcha vérifié avec succès dans l\'iframe.');
-    } else if (successText.includes('Veuillez réessayer..') || successText.includes('rechargement ...')) {
+    if (!successText || successText.includes('Veuillez réessayer..') || successText.includes('rechargement ...')) {
         console.error('Captcha incorrect, on recommence...');
         await sendToDiscord("warning", "Captcha incorrect, nouvelle tentative.\nRéponse extraite : " + captcha);
         await sleep(2000);
@@ -71,6 +69,8 @@ async function scriptVote() {
             await browser.close();
             return;
         }
+    } else if (successText.includes('Vérifié avec succès')) {
+        console.log('Captcha vérifié avec succès dans l\'iframe.');
     } else {
         console.error('Message inattendu dans l\'iframe', successText);
         await sendToDiscord("error", "Message inattendu dans l'iframe : " + successText);
