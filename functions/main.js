@@ -116,15 +116,20 @@ async function mainModule(browser, page) {
     await iframe.waitForFunction(
         selector => {
             const txt = document.querySelector(selector)?.textContent.trim();
-            return txt === 'Vérifié avec succès' || txt === 'Veuillez réessayer..';
+            return txt === 'Vérifié avec succès' || txt === 'Veuillez réessayer..' || txt === 'rechargement ...';
         },
         { timeout: 15000 },
         successSelector
     ).catch(() => {});
 
     let successText = await iframe.$eval(successSelector, el => el.textContent.trim()).catch(() => '');
+    if (!successText) {
+        console.error("Impossible de récupérer le texte de l'iframe. (Ou aucun texte trouvé)");
+        return null;
+    }
+    
     console.log('Texte dans l\'iframe :', successText);
-    return successText;
+    return [successText, answer];
 }
 
 async function formatAnswer(result) {

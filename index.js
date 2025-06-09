@@ -28,24 +28,25 @@ async function scriptVote() {
 
     console.log("Pop-up cookies passée. Début de la recherche du captcha...");
 
-    const successText = await mainModule(browser, page);
+    const [ successText, captcha ] = await mainModule(browser, page);
 
-    if (!successText) {
-        await browser.close();
-        return;
-    }
+    // if (!successText) {
+    //     await browser.close();
+    //     await sendToDiscord("error", "Aucun texte récupéré dans l'iframe.");
+    //     return;
+    // }
 
     let retryCount = 0;
 
     if (successText.includes('Vérifié avec succès')) {
         console.log('Captcha vérifié avec succès dans l\'iframe.');
-    } else if (successText.includes('Veuillez réessayer..')) {
+    } else if (successText.includes('Veuillez réessayer..') || successText.includes('rechargement ...')) {
         console.error('Captcha incorrect, on recommence...');
-        await sendToDiscord("warning", "Captcha incorrect, nouvelle tentative.");
+        await sendToDiscord("warning", "Captcha incorrect, nouvelle tentative.\nRéponse extraite : " + captcha);
         await sleep(2000);
         retryCount++;
 
-        const retryText = await mainModule(browser, page);
+        const [ retryText, captcha ] = await mainModule(browser, page);
         if (!retryText) {
             await browser.close();
             return;
@@ -89,7 +90,7 @@ async function scriptVote() {
         process.env.URL_VOTE_TOPSERVEURS + '/success'
     ).then(() => {
         console.log('Vote validé : page de succès détectée.');
-        sendToDiscord("success", "Vote comptabilisé. Page de succès détectée.");
+        sendToDiscord("success", "Vote comptabilisé. Page de succès détectée.\nRéponse extraite : " + captcha);
         // Tu peux envoyer une notification Discord ici si tu veux
     }).catch(() => {
         console.error('La page de succès du vote n\'a pas été détectée.');
@@ -104,7 +105,11 @@ let lastRandomDelay = 0;
 
 (async () => {
     console.log('Script de vote prêt !');
-    
+
+    scriptVote().catch(error => {
+        console.error('Erreur lors de l\'exécution du script de vote :', error);
+    });
+
     // Demander à l'utilisateur s'il veut définir un délai par défaut
     const response = await getUserInput('Souhaitez-vous définir un délai par défaut ? (nombre de minutes, ou Entrée pour ignorer): ');
     
