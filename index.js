@@ -11,7 +11,7 @@ async function scriptVote() {
     const browser = await puppeteer.launch({
         headless: process.env.HEADLESS,
         // executablePath: '/usr/bin/chromium-browser', // Décommentez si vous avez besoin de spécifier le chemin de Chromium (par exemple sur un Raspberry/serveur Linux)
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu']
     });
     const page = await browser.newPage();
 
@@ -101,12 +101,27 @@ async function scriptVote() {
     ).then(() => {
         console.log('Vote validé : page de succès détectée.');
         sendToDiscord("success", "Vote comptabilisé. Page de succès détectée.");
-        // Tu peux envoyer une notification Discord ici si tu veux
-    }).catch(() => {
-        console.error('La page de succès du vote n\'a pas été détectée.');
-        sendToDiscord("warning", "La page de succès du vote n'a pas été détectée.");
-        sendCaptchaToDiscord(captcha, './functions/captcha.png');
-        // Tu peux gérer ici le cas d’échec
+    }).catch(async () => {
+        const currentUrl = page.url();
+
+        if (currentUrl === 'https://top-serveurs.net/gta/vote/evoma/failed') {
+            console.error('Vote échoué : page d\'erreur détectée.');
+            await sendToDiscord("error", "Vote échoué : page d\'erreur détectée.");
+        } else {
+            console.error('La page de succès du vote n\'a pas été détectée.');
+
+            // Récupérer le titre de la page
+            const pageTitle = await page.title();
+            // Récupérer le texte principal de la page
+            const bodyText = await page.evaluate(() => document.body.innerText.slice(0, 1000)); // Limite à 1000 caractères
+
+            console.log('Titre de la page:', pageTitle);
+            console.log('URL actuelle:', currentUrl);
+            console.log('Extrait du contenu de la page:', bodyText);
+
+            await sendToDiscord("warning", "La page de succès du vote n'a pas été détectée.");
+            await sendCaptchaToDiscord(captcha, './functions/captcha.png');
+        }
     });
 
     await browser.close();
