@@ -5,7 +5,7 @@ const cron = require('node-cron');
 const { CronExpressionParser } = require('cron-parser');
 
 const { sleep, mainModule, getUserInput } = require('./functions/main.js');
-const { sendToDiscord } = require('./functions/discord.js');
+const { sendToDiscord, sendCaptchaToDiscord } = require('./functions/discord.js');
 
 async function scriptVote() {
     const browser = await puppeteer.launch({
@@ -43,39 +43,42 @@ async function scriptVote() {
     //     return;
     // }
 
-    let retryCount = 0;
+    // Boucle de tentatives pour le captcha
+    let maxRetries = 3;
+    let attempt = 0;
+    let retry = true;
 
-    if (!successText || successText.includes('Veuillez réessayer..') || successText.includes('rechargement ...')) {
-        console.error('Captcha incorrect, on recommence...');
-        await sendToDiscord("warning", "Captcha incorrect, nouvelle tentative.\nRéponse extraite : " + captcha);
-        await sleep(2000);
-        retryCount++;
+    while (retry && attempt <= maxRetries) {
+        if (!successText || successText.includes('Veuillez réessayer..') || successText.includes('rechargement')) {
+            console.error('Captcha incorrect, on recommence...');
+            await sendToDiscord("warning", `Captcha incorrect, tentative ${attempt + 1}/${maxRetries}.`);
+            await sendCaptchaToDiscord(captcha, './functions/captcha.png');
+            await sleep(2000);
+            attempt++;
 
-        const [ retryText, captcha ] = await mainModule(browser, page);
-        if (!retryText) {
-            await browser.close();
-            return;
-        }
+            if (attempt >= maxRetries) {
+                console.error("Trop d'échecs de captcha, arrêt.");
+                await sendToDiscord("error", "Trop d'échecs de captcha, arrêt.");
+                await browser.close();
+                return;
+            }
 
-        if (retryText.includes('Vérifié avec succès')) {
+            const mainResultRetry = await mainModule(browser, page);
+            if (Array.isArray(mainResultRetry)) {
+                [successText, captcha] = mainResultRetry;
+            } else {
+                successText = mainResultRetry;
+                captcha = null;
+            }
+        } else if (successText.includes('Vérifié avec succès')) {
             console.log('Captcha vérifié avec succès dans l\'iframe.');
-        } else if (retryText.includes('Veuillez réessayer..')) {
-            retryCount++;
-        }
-
-        if (retryCount >= 2) {
-            console.error("Trop d'échecs de captcha, arrêt.");
-            await sendToDiscord("error", "Trop d'échecs de captcha, arrêt.");
+            retry = false;
+        } else {
+            console.error('Message inattendu dans l\'iframe', successText);
+            await sendToDiscord("error", "Message inattendu dans l'iframe : " + successText);
             await browser.close();
             return;
         }
-    } else if (successText.includes('Vérifié avec succès')) {
-        console.log('Captcha vérifié avec succès dans l\'iframe.');
-    } else {
-        console.error('Message inattendu dans l\'iframe', successText);
-        await sendToDiscord("error", "Message inattendu dans l'iframe : " + successText);
-        await browser.close();
-        return;
     }
 
     // Cliquer sur le bouton "Voter" (hors iframe)
@@ -97,11 +100,12 @@ async function scriptVote() {
         process.env.URL_VOTE_TOPSERVEURS + '/success'
     ).then(() => {
         console.log('Vote validé : page de succès détectée.');
-        sendToDiscord("success", "Vote comptabilisé. Page de succès détectée.\nRéponse extraite : " + captcha);
+        sendToDiscord("success", "Vote comptabilisé. Page de succès détectée.");
         // Tu peux envoyer une notification Discord ici si tu veux
     }).catch(() => {
         console.error('La page de succès du vote n\'a pas été détectée.');
         sendToDiscord("warning", "La page de succès du vote n'a pas été détectée.");
+        sendCaptchaToDiscord(captcha, './functions/captcha.png');
         // Tu peux gérer ici le cas d’échec
     });
 

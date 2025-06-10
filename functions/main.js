@@ -2,8 +2,12 @@ const readline = require('readline');
 const dotenv = require('dotenv');
 dotenv.config();
 
+const fs = require('fs');
+const path = require('path');
+
 const { newQuery } = require('./chatgpt.js');
 const { sendToDiscord } = require('./discord.js');
+const { endianness } = require('os');
 
 async function mainModule(browser, page) {
     // Attendre que le captcha soit visible (img ou div)
@@ -69,6 +73,23 @@ async function mainModule(browser, page) {
     if (captchaSrc) {
         // console.log('Captcha src:', captchaSrc);
         console.log('Captcha trouvé et extrait avec succès !');
+        
+        // Enregister le captcha dans un fichier pour vérification
+        const captchaPath = path.join(__dirname, 'captcha.png');
+
+        if (captchaSrc.startsWith('data:image')) {
+            // Extraire la partie base64
+            const base64Data = captchaSrc.replace(/^data:image\/\w+;base64,/, '');
+            const buffer = Buffer.from(base64Data, 'base64');
+            fs.writeFileSync(captchaPath, buffer);
+            console.log('Captcha enregistré dans', captchaPath);
+        } else {
+            // Cas d'une URL classique
+            const response = await fetch(captchaSrc);
+            const buffer = await response.buffer();
+            fs.writeFileSync(captchaPath, buffer);
+            console.log('Captcha enregistré dans', captchaPath);
+        }
     } else {
         console.error("Captcha introuvable, arrêt du script.");
         await sendToDiscord("error", "Captcha introuvable, arrêt du script.");
