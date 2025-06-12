@@ -5,9 +5,8 @@ dotenv.config();
 const fs = require('fs');
 const path = require('path');
 
-const { newQuery } = require('./chatgpt.js');
+const { newQueryChatGPT, newQueryMistral } = require('./aimodal.js');
 const { sendToDiscord } = require('./discord.js');
-const { endianness } = require('os');
 
 async function mainModule(browser, page) {
     // Attendre que le captcha soit visible (img ou div)
@@ -97,7 +96,14 @@ async function mainModule(browser, page) {
         return;
     }
 
-    let result = await newQuery(captchaSrc);
+    // Choisir le modèle selon la variable d'environnement AI_MODEL ("chatgpt" ou "mistral")
+    let result;
+    const aiModel = process.env.AI_MODEL ? process.env.AI_MODEL.toLowerCase() : 'mistral';
+    if (aiModel === 'chatgpt') {
+        result = await newQueryChatGPT(captchaSrc);
+    } else {
+        result = await newQueryMistral(captchaSrc);
+    }
     // const result = "L'inscription sur l'image est : GZHM";
 
     if (!result) {
