@@ -24,8 +24,11 @@ DISCORD_WEBHOOK_NAME='BOT Vote' # Nom du Webhook
 
 CRON_TIME='0 */2 * * *' # Heure d'exécution du cron, ici toutes les 2 heures
 HEADLESS=false # true : Le navigateur sera lancé en mode headless (sans interface graphique), false : avec interface graphique
+TEST_MODE = false # true : Le script sera immédiatement exécuté, puis continuera à s'exécuter selon le cron, false : Le bot votera uniquement selon le cron
 
+AI_MODEL = 'chatgpt' # Modèle d'IA à utiliser, 'chatgpt' ou 'mistral'
 CHATGPT_API_KEY='' # Clé API ChatGPT
+MISTRAL_API_KEY = '' # Clé API Mistral
 ```
 
 ## Installation supplémentaire
