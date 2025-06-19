@@ -12,7 +12,7 @@ async function sendToDiscord(status, desc) {
     };
     const statusTitle = statusMap[status] || "";
     const statusDesc = desc || "Aucun détail fourni";
-    const content = `<@${process.env.DISCORD_ID}>`;
+    const content = status === "good" ? "" : `<@${process.env.DISCORD_ID}>`;
 
     const embed = [
         {

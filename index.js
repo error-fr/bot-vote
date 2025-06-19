@@ -100,7 +100,7 @@ async function scriptVote() {
         process.env.URL_VOTE_TOPSERVEURS + '/success'
     ).then(() => {
         console.log('Vote validé : page de succès détectée.');
-        sendToDiscord("success", "Vote comptabilisé. Page de succès détectée.");
+        sendToDiscord("good", "Vote comptabilisé. Page de succès détectée.");
     }).catch(async () => {
         const currentUrl = page.url();
 
