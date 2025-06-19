@@ -192,6 +192,7 @@ let lastRandomDelay = 0;
         console.log(`${now.toLocaleString()} - Exécution du script de vote...`);
         scriptVote().catch(error => {
             console.error('Erreur lors de l\'exécution du script de vote :', error);
+            sendToDiscord("error", 'Erreur lors de l\'exécution du script de vote :\n', error);
         });
     });
 })();
