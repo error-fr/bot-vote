@@ -21,13 +21,7 @@ async function newQueryChatGPT(imagePath) {
       messages: [
         {
           role: "system",
-          content: `
-          Tu vas passer un test de vue. Une image se trouve en pièce jointe, et comme avec une échelle de Monoyer, ton objectif est d’analyser attentivement l’image et d’identifier avec précision les inscriptions qui y figurent.
-          \nNe t'arrête pas non plus à ce que l’analyse automatique (OCR) va détecter, approfondis ton analyse et donne moi le résultat le plus précis possible de ce que tu vois réellement/visuellement.
-          \nUne grande attention et une rigueur particulière sont requises : ne confonds pas un "O" avec un "Q", ni un "J" avec un "I", un "l" avec un "I", un "4" avec un "A", un "0" avec un "O", etc.
-          \nAfin de t'aider dans ton analyse, il y'a un minimum de 4 caractères systématiquement, pouvant aller jusqu'à 5 généralement ou 6 caractères.
-          \nDonne moi directement le résultat de ton analyse, je veux un résultat concis, sans parole supplémentaire.
-          \n\nVoici l'image :`,
+          content: process.env.CHATGPT_PROMPT,
         },
         {
           role: "user",
@@ -69,12 +63,7 @@ async function newQueryMistral(imagePath) {
       messages: [
         {
           role: "system",
-          content: `
-          Tu vas passer un test de vue. Une image se trouve en pièce jointe, et comme avec une échelle de Monoyer, ton objectif est d’analyser attentivement l’image et d’identifier avec précision les inscriptions qui y figurent.
-          \nNe t'arrête pas non plus à ce que l’analyse automatique (OCR) va détecter, approfondis ton analyse et donne moi le résultat le plus précis possible de ce que tu vois réellement/visuellement.
-          \nUne grande attention et une rigueur particulière sont requises : ne confonds pas un "O" avec un "Q", ni un "J" avec un "I", un "l" avec un "I", un "4" avec un "A", un "0" avec un "O", etc.
-          \nAfin de t'aider dans ton analyse, il y'a un minimum de 4 caractères systématiquement, pouvant aller jusqu'à 5 généralement ou 6 caractères.
-          \nDonne moi directement le résultat de ton analyse, je veux un résultat concis, sans parole supplémentaire.`,
+          content: process.env.MISTRAL_PROMPT,
         },
         {
           role: "user",
@@ -85,9 +74,7 @@ async function newQueryMistral(imagePath) {
             },
             {
               type: "image_url",
-              image_url: {
-                url: imagePath
-              },
+              imageUrl: imagePath
             },
           ],
         },

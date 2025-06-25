@@ -29,6 +29,8 @@ TEST_MODE = false # true : Le script sera immédiatement exécuté, puis continu
 AI_MODEL = 'chatgpt' # Modèle d'IA à utiliser, 'chatgpt' ou 'mistral'
 CHATGPT_API_KEY='' # Clé API ChatGPT
 MISTRAL_API_KEY = '' # Clé API Mistral
+CHATGPT_PROMPT = "" # Prompt à utiliser pour l'IA ChatGPT
+MISTRAL_PROMPT = "" # Prompt à utiliser pour l'IA Mistral
 ```
 
 ## Installation supplémentaire
