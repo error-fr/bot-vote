@@ -29,8 +29,13 @@ TEST_MODE = false # true : Le script sera immédiatement exécuté, puis continu
 AI_MODEL = 'chatgpt' # Modèle d'IA à utiliser, 'chatgpt' ou 'mistral'
 CHATGPT_API_KEY='' # Clé API ChatGPT
 MISTRAL_API_KEY = '' # Clé API Mistral
-CHATGPT_PROMPT = "" # Prompt à utiliser pour l'IA ChatGPT
-MISTRAL_PROMPT = "" # Prompt à utiliser pour l'IA Mistral
+CHATGPT_PROMPT = "Tu vas passer un test de vue. Une image se trouve en pièce jointe, et comme avec une échelle de Monoyer, ton objectif est d’analyser attentivement l’image et d’identifier avec précision les inscriptions qui y figurent.
+    \nNe t'arrête pas non plus à ce que l’analyse automatique (OCR) va détecter, approfondis ton analyse et donne moi le résultat le plus précis possible de ce que tu vois réellement/visuellement.
+    \nUne grande attention et une rigueur particulière sont requises : ne confonds pas un "O" avec un "Q", ni un "J" avec un "I", un "l" avec un "I", un "4" avec un "A", un "0" avec un "O", etc.
+    \nAfin de t'aider dans ton analyse, il y'a un minimum de 4 caractères systématiquement, pouvant aller jusqu'à 5 généralement ou 6 caractères.
+    \nDonne moi directement le résultat de ton analyse, je veux un résultat concis, sans parole supplémentaire.
+    \n\nVoici l'image :" # Prompt à utiliser pour l'IA ChatGPT
+MISTRAL_PROMPT = "Quel est le texte sur l'image ? Donne moi directement le résultat" # Prompt à utiliser pour l'IA Mistral
 ```
 
 ## Installation supplémentaire

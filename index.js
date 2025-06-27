@@ -30,6 +30,16 @@ async function scriptVote() {
 
     let mainResult = await mainModule(browser, page);
     let successText, captcha;
+    if (mainResult == null) {
+        console.error("mainModule a retourné null, arrêt du script.");
+        await browser.close();
+        return;
+    }
+    if (typeof mainResult === 'number') {
+        console.log(`mainModule a retourné un nombre (${mainResult}), attente de ${mainResult} minutes...`);
+        await sleep((mainResult * 60 * 1000)); // Convertir les minutes en millisecondes
+        mainResult = await mainModule(browser, page);
+    }
     if (Array.isArray(mainResult)) {
         [successText, captcha] = mainResult;
     } else {
@@ -134,67 +144,71 @@ let lastRandomDelay = 0;
 
     const testMode = process.env.TEST_MODE === 'true';
     if (testMode) {
-        scriptVote().catch(error => {
+        try {
+            console.log('Mode test activé, exécution immédiate du script de vote...');
+            await scriptVote();
+        } catch (error) {
             console.error('Erreur lors de l\'exécution du script de vote :', error);
-        });
-    }
-
-    // Demander à l'utilisateur s'il veut définir un délai par défaut
-    const response = await getUserInput('Souhaitez-vous définir un délai par défaut ? (nombre de minutes, ou Entrée pour ignorer): ');
-    
-    if (response.trim() !== '') {
-        const delay = parseInt(response);
-        if (!isNaN(delay) && delay >= 0) {
-            lastRandomDelay = delay;
-            console.log(`Délai par défaut défini à ${lastRandomDelay} minute(s).`);
-        } else {
-            console.log('Entrée invalide. Délai par défaut conservé à 0.');
         }
+        return;
     } else {
-        console.log('Aucun délai par défaut spécifié. Valeur conservée à 0.');
-    }
-
-    // Annonce de la prochaine exécution
-    try {
-        const interval = CronExpressionParser.parse(process.env.CRON_TIME);
-        const nextDate = interval.next().toDate();
-        const nextExecution = new Date(nextDate.getTime() + lastRandomDelay * 60000);
-        console.log(`Prochaine exécution prévue à : ${nextExecution.toLocaleString()}`);
-    } catch (err) {
-        console.log('Impossible de calculer la prochaine exécution (cron invalide ?)');
-        console.error(`Erreur détaillée: ${err.message}`);
-        console.error(`Valeur de CRON_TIME: "${process.env.CRON_TIME}"`);
-    }
-
-    cron.schedule(process.env.CRON_TIME, async () => {
-        let now = new Date();
-        const hour = now.getHours();
-
-        console.log(`Cron déclenché à ${now.toLocaleString()}`);
-
-        // Si l'heure est entre 3h et 7h, on skip l'exécution et reset le delay
-        if (hour >= 3 && hour < 7) {
-            console.log("Exécution du script ignorée entre 3h et 7h.");
-            lastRandomDelay = 0;
-            return;
+        // Demander à l'utilisateur s'il veut définir un délai par défaut
+        const response = await getUserInput('Souhaitez-vous définir un délai par défaut ? (nombre de minutes, ou Entrée pour ignorer): ');
+        
+        if (response.trim() !== '') {
+            const delay = parseInt(response);
+            if (!isNaN(delay) && delay >= 0) {
+                lastRandomDelay = delay;
+                console.log(`Délai par défaut défini à ${lastRandomDelay} minute(s).`);
+            } else {
+                console.log('Entrée invalide. Délai par défaut conservé à 0.');
+            }
+        } else {
+            console.log('Aucun délai par défaut spécifié. Valeur conservée à 0.');
         }
 
-        // Générer un délai aléatoire entre 1 et 2 minutes
-        let newDelay = lastRandomDelay + Math.floor(Math.random() * 2) + 1;
+        // Annonce de la prochaine exécution
+        try {
+            const interval = CronExpressionParser.parse(process.env.CRON_TIME);
+            const nextDate = interval.next().toDate();
+            const nextExecution = new Date(nextDate.getTime() + lastRandomDelay * 60000);
+            console.log(`Prochaine exécution prévue à : ${nextExecution.toLocaleString()}`);
+        } catch (err) {
+            console.log('Impossible de calculer la prochaine exécution (cron invalide ?)');
+            console.error(`Erreur détaillée: ${err.message}`);
+            console.error(`Valeur de CRON_TIME: "${process.env.CRON_TIME}"`);
+        }
 
-        lastRandomDelay = newDelay;
+        cron.schedule(process.env.CRON_TIME, async () => {
+            let now = new Date();
+            const hour = now.getHours();
 
-        console.log(`Attente supplémentaire de ${newDelay} minute(s) avant exécution du script de vote...`);
-        await sleep(newDelay * 60 * 1000);
+            console.log(`Cron déclenché à ${now.toLocaleString()}`);
 
-        now = new Date(); // Mettre à jour l'heure après le délai
+            // Si l'heure est entre 3h et 7h, on skip l'exécution et reset le delay
+            if (hour >= 3 && hour < 7) {
+                console.log("Exécution du script ignorée entre 3h et 7h.");
+                lastRandomDelay = 0;
+                return;
+            }
 
-        console.log(`${now.toLocaleString()} - Exécution du script de vote...`);
-        scriptVote().catch(error => {
-            console.error('Erreur lors de l\'exécution du script de vote :', error);
-            sendToDiscord("error", `Erreur lors de l\'exécution du script de vote :\n${error}`);
+            // Générer un délai aléatoire entre 1 et 2 minutes
+            let newDelay = lastRandomDelay + Math.floor(Math.random() * 2) + 1;
+
+            lastRandomDelay = newDelay;
+
+            console.log(`Attente supplémentaire de ${newDelay} minute(s) avant exécution du script de vote...`);
+            await sleep(newDelay * 60 * 1000);
+
+            now = new Date(); // Mettre à jour l'heure après le délai
+
+            console.log(`${now.toLocaleString()} - Exécution du script de vote...`);
+            scriptVote().catch(error => {
+                console.error('Erreur lors de l\'exécution du script de vote :', error);
+                sendToDiscord("error", `Erreur lors de l\'exécution du script de vote :\n${error}`);
+            });
         });
-    });
+    };
 })();
 
 //class="mtcap-show-if-nocss" aria-label="image captcha." id="mtcap-image-nocss-1"

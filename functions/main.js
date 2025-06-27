@@ -113,8 +113,8 @@ async function mainModule(browser, page) {
         return;
     }
 
-    // let answer = await formatAnswer(result);
-    let answer = result;
+    let answer = await formatAnswer(result);
+    // let answer = result;
 
     if (answer) {
         // Remplir l'input du captcha dans l'iframe
@@ -160,12 +160,19 @@ async function mainModule(browser, page) {
 }
 
 async function formatAnswer(result) {
+    let answerText = '';
     if (result.includes(':')) {
         answerText = result.split(':').pop().trim();
-        console.log('Texte extrait après le ":", résultat:', answerText);
+        console.log('Texte extrait après le ":" : ', answerText);
+    } else {
+        answerText = result.trim();
     }
-    const match = answerText.match(/[A-Z0-9]{4,8}/i);
-    const answer = match ? match[0].toUpperCase() : '';
+    // Enlever les espaces, les guillemets et mettre en majuscule
+    answerText = answerText.replace(/["'«»“”‘’]/g, ''); // retire tous types de guillemets
+    answerText = answerText.replace(/\s+/g, '').toUpperCase();
+    // Extraire une séquence de 4 à 8 caractères alphanumériques
+    const match = answerText.match(/[A-Z0-9]{4,8}/);
+    const answer = match ? match[0] : '';
 
     console.log('Résultat / Réponse transformé pour le captcha :', answer);
     return answer;
