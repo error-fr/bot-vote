@@ -30,15 +30,15 @@ async function scriptVote() {
 
     let mainResult = await mainModule(browser, page);
     let successText, captcha;
-    if (mainResult == null) {
-        console.error("mainModule a retourné null, arrêt du script.");
-        await browser.close();
-        return;
-    }
     if (typeof mainResult === 'number') {
         console.log(`mainModule a retourné un nombre (${mainResult}), attente de ${mainResult} minutes...`);
         await sleep((mainResult * 60 * 1000)); // Convertir les minutes en millisecondes
         mainResult = await mainModule(browser, page);
+    }
+    if (mainResult == null) {
+        console.error("mainModule a retourné null, arrêt du script.");
+        await browser.close();
+        return;
     }
     if (Array.isArray(mainResult)) {
         [successText, captcha] = mainResult;
