@@ -160,13 +160,23 @@ async function mainModule(browser, page) {
 }
 
 async function formatAnswer(result) {
-    // Chercher d'abord une séquence de 4 à 8 lettres majuscules entre guillemets
-    let match = result.match(/["'«»“”‘’]([A-Z]{4,8})["'«»“”‘’]/i);
-    if (!match) {
-        // Sinon, chercher une séquence de 4 à 8 lettres majuscules non entourées
-        match = result.match(/[A-Z]{4,8}/i);
+    // Chercher d'abord une séquence de 4 à 8 lettres majuscules entre guillemets (avec ou sans espaces)
+    let match = result.match(/["'«»“”‘’]([A-Z ]{4,15})["'«»“”‘’]/i);
+    let answer = '';
+    if (match) {
+        // Retirer les espaces pour ne garder que les lettres
+        answer = match[1].replace(/\s+/g, '');
+    } else {
+        // Sinon, chercher toutes les lettres majuscules isolées (ex: L K S I)
+        const letters = result.match(/[A-Z]/g);
+        if (letters && letters.length >= 4) {
+            answer = letters.join('');
+        } else {
+            // Sinon, fallback sur une séquence de 4 à 8 majuscules consécutives
+            match = result.match(/[A-Z]{4,8}/i);
+            answer = match ? match[0] : '';
+        }
     }
-    const answer = match ? match[1] || match[0] : '';
     console.log('Résultat / Réponse transformé pour le captcha :', answer);
     return answer.toUpperCase();
 }
