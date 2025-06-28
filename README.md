@@ -47,7 +47,7 @@ Pour cela, exécutez les commandes suivantes :
 
 - Assurez-vous que votre Raspberry Pi est à jour :
 ```bash
-sudo apt-get update && sudo apt-get upgrade
+sudo apt update && sudo apt upgrade
 ```
 
 - Installez Chromium :
