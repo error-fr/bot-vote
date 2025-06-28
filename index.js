@@ -106,7 +106,7 @@ async function scriptVote() {
     // Attendre que l'URL change vers la page de succès (max 10 secondes)
     await page.waitForFunction(
         expectedUrl => window.location.href === expectedUrl,
-        { timeout: 10000 },
+        { timeout: 15000 },
         process.env.URL_VOTE_TOPSERVEURS + '/success'
     ).then(() => {
         console.log('Vote validé : page de succès détectée.');
@@ -118,6 +118,8 @@ async function scriptVote() {
             console.error('Vote échoué : page d\'erreur détectée.');
             await sendToDiscord("error", "Vote échoué : page d\'erreur détectée.");
         } else {
+            // revérifier l'URL si cest pas la page de succès
+
             console.error('La page de succès du vote n\'a pas été détectée.');
 
             // Récupérer le titre de la page
