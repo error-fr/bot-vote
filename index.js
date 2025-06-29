@@ -8,11 +8,17 @@ const { sleep, mainModule, getUserInput } = require('./functions/main.js');
 const { sendToDiscord, sendCaptchaToDiscord } = require('./functions/discord.js');
 
 async function scriptVote() {
-    const browser = await puppeteer.launch({
+    const launchOptions = {
         headless: process.env.HEADLESS,
-        // executablePath: '/usr/bin/chromium-browser', // Décommentez si vous avez besoin de spécifier le chemin de Chromium (par exemple sur un Raspberry/serveur Linux)
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu']
-    });
+    };
+    
+    // Ajouter executablePath seulement si la variable d'environnement n'est pas vide
+    if (process.env.EXECUTABLE_PATH && process.env.EXECUTABLE_PATH.trim() !== '') {
+        launchOptions.executablePath = process.env.EXECUTABLE_PATH;
+    }
+    
+    const browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
 
     await page.goto(process.env.URL_VOTE_TOPSERVEURS + '?pseudo=' + process.env.URL_VOTE_TOPSERVEURS_NAME, {
