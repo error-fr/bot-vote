@@ -12,12 +12,12 @@ async function scriptVote() {
         headless: process.env.HEADLESS,
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu']
     };
-    
+
     // Ajouter executablePath seulement si la variable d'environnement n'est pas vide
     if (process.env.EXECUTABLE_PATH && process.env.EXECUTABLE_PATH.trim() !== '') {
         launchOptions.executablePath = process.env.EXECUTABLE_PATH;
     }
-    
+
     const browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
 
@@ -161,18 +161,21 @@ let lastRandomDelay = 0;
         return;
     } else {
         // Demander à l'utilisateur s'il veut définir un délai par défaut
-        const response = await getUserInput('Souhaitez-vous définir un délai par défaut ? (nombre de minutes, ou Entrée pour ignorer): ');
-        
-        if (response.trim() !== '') {
-            const delay = parseInt(response);
-            if (!isNaN(delay) && delay >= 0) {
-                lastRandomDelay = delay;
-                console.log(`Délai par défaut défini à ${lastRandomDelay} minute(s).`);
+
+        if (process.env.DEFINE_DEFAULT_DELAY && process.env.DEFINE_DEFAULT_DELAY === 'true') {
+            const response = await getUserInput('Souhaitez-vous définir un délai par défaut ? (nombre de minutes, ou Entrée pour ignorer): ');
+
+            if (response.trim() !== '') {
+                const delay = parseInt(response);
+                if (!isNaN(delay) && delay >= 0) {
+                    lastRandomDelay = delay;
+                    console.log(`Délai par défaut défini à ${lastRandomDelay} minute(s).`);
+                } else {
+                    console.log('Entrée invalide. Délai par défaut conservé à 0.');
+                }
             } else {
-                console.log('Entrée invalide. Délai par défaut conservé à 0.');
+                console.log('Aucun délai par défaut spécifié. Valeur conservée à 0.');
             }
-        } else {
-            console.log('Aucun délai par défaut spécifié. Valeur conservée à 0.');
         }
 
         // Annonce de la prochaine exécution
