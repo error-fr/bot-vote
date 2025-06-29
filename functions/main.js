@@ -167,13 +167,14 @@ async function formatAnswer(result) {
         // Retirer les espaces pour ne garder que les lettres
         answer = match[1].replace(/\s+/g, '');
     } else {
-        // Sinon, chercher toutes les lettres majuscules isolées (ex: L K S I)
-        const letters = result.match(/[A-Z]/g);
-        if (letters && letters.length >= 4) {
-            answer = letters.join('');
+        // Chercher une séquence de lettres majuscules avec des espaces ou tirets (ex: R Y Y W ou R-Y-Y-W)
+        match = result.match(/([A-Z][\s\-]*[A-Z][\s\-]*[A-Z][\s\-]*[A-Z][\s\-]*[A-Z]?[\s\-]*[A-Z]?[\s\-]*[A-Z]?[\s\-]*[A-Z]?)/);
+        if (match) {
+            // Retirer les espaces et tirets pour ne garder que les lettres
+            answer = match[1].replace(/[\s\-]/g, '');
         } else {
             // Sinon, fallback sur une séquence de 4 à 8 majuscules consécutives
-            match = result.match(/[A-Z]{4,8}/i);
+            match = result.match(/[A-Z]{4,8}/);
             answer = match ? match[0] : '';
         }
     }
