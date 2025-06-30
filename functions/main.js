@@ -160,8 +160,8 @@ async function mainModule(browser, page) {
 }
 
 async function formatAnswer(result) {
-    // Chercher d'abord une séquence de 4 à 8 lettres majuscules entre guillemets (avec ou sans espaces)
-    let match = result.match(/["'«»“”‘’]([A-Z ]{4,15})["'«»“”‘’]/i);
+    // Chercher d'abord une séquence de 4 à 15 lettres majuscules entre guillemets doubles ou français (pas de guillemets simples)
+    let match = result.match(/["«»“”]([A-Z ]{4,15})["«»“”]/i);
     let answer = '';
     if (match) {
         // Retirer les espaces pour ne garder que les lettres
