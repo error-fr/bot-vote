@@ -1,3 +1,4 @@
+
 const puppeteer = require('puppeteer');
 const dotenv = require('dotenv');
 dotenv.config();
@@ -9,17 +10,75 @@ const { sendToDiscord, sendCaptchaToDiscord } = require('./functions/discord.js'
 
 async function scriptVote() {
     const launchOptions = {
-        headless: process.env.HEADLESS,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu']
+        headless: process.env.HEADLESS === 'true',
+        args: [
+            '--ignore-certificate-errors',
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-gpu'
+        ]
     };
 
-    // Ajouter executablePath seulement si la variable d'environnement n'est pas vide
     if (process.env.EXECUTABLE_PATH && process.env.EXECUTABLE_PATH.trim() !== '') {
         launchOptions.executablePath = process.env.EXECUTABLE_PATH;
     }
 
+    if (process.env.PROXY && process.env.PROXY === 'true') {
+        console.log('Proxy activé, ajout des options de proxy...');
+        if (process.env.PROXY_SERVER && process.env.PROXY_SERVER.trim() !== '') {
+            launchOptions.args.push('--proxy-server=' + process.env.PROXY_SERVER);
+        } else {
+            console.error("PROXY_SERVER n'est pas défini ou est vide dans le fichier .env alors que le proxy est activé.");
+            await sendToDiscord("error", "PROXY_SERVER n'est pas défini ou est vide dans le fichier .env alors que le proxy est activé.");
+            return;
+        }
+    }
+
     const browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
+
+    if (process.env.PROXY && process.env.PROXY === 'true') {
+        await page.authenticate({
+            username: process.env.PROXY_USER,
+            password: process.env.PROXY_PASSWORD
+        });
+
+        console.log("Proxy authentifié avec succès.");
+
+        if( process.env.TEST_PROXY && process.env.TEST_PROXY === 'true') {
+            console.log("Test du proxy activé, vérification de la connexion...");
+            if (!process.env.TEST_PROXY_URL || process.env.TEST_PROXY_URL.trim() === '') {
+                console.error("TEST_PROXY_URL n'est pas défini ou est vide dans le fichier .env.");
+                await browser.close();
+                return;
+            }
+
+            // Test de connexion au proxy
+            try {
+                console.log("Test de connexion au proxy...");
+                await page.goto(process.env.TEST_PROXY_URL, { waitUntil: 'domcontentloaded' });
+                const geoData = await page.evaluate(() => document.body.innerText);
+                console.log('Connexion au proxy réussie.\nInfos:', geoData);
+                
+                console.log('Test du proxy sur Google...');
+                await page.goto('https://www.google.com', { waitUntil: 'networkidle2', timeout: 10000 });
+                console.log("Test du proxy sur Google réussi.");
+                
+                await browser.close();
+                return;
+            } catch (error) {
+                console.error("Erreur de connexion au proxy :", error);
+                await browser.close();
+                return;
+            }
+        }
+
+        // Camouflage Puppeteer
+        await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36");
+        await page.evaluateOnNewDocument(() => {
+            Object.defineProperty(navigator, 'webdriver', { get: () => false });
+        });
+    }
 
     await page.goto(process.env.URL_VOTE_TOPSERVEURS + '?pseudo=' + process.env.URL_VOTE_TOPSERVEURS_NAME, {
         timeout: 60000 // Timeout de 60 secondes
@@ -196,20 +255,22 @@ let lastRandomDelay = 0;
 
             console.log(`Cron déclenché à ${now.toLocaleString()}`);
 
-            // Si l'heure est entre 3h et 7h, on skip l'exécution et reset le delay
-            if (hour >= 3 && hour < 7) {
-                console.log("Exécution du script ignorée entre 3h et 7h.");
-                lastRandomDelay = 0;
-                return;
+            if( process.env.SAFE_MODE && process.env.SAFE_MODE === 'true') {
+                // Si l'heure est entre 3h et 7h, on skip l'exécution et reset le delay
+                if (hour >= 3 && hour < 7) {
+                    console.log("Exécution du script ignorée entre 3h et 7h.");
+                    lastRandomDelay = 0;
+                    return;
+                }
+
+                // Générer un délai aléatoire entre 1 et 2 minutes
+                let newDelay = lastRandomDelay + Math.floor(Math.random() * 2) + 1;
+
+                lastRandomDelay = newDelay;
+
+                console.log(`Attente supplémentaire de ${newDelay} minute(s) avant exécution du script de vote...`);
+                await sleep(newDelay * 60 * 1000);
             }
-
-            // Générer un délai aléatoire entre 1 et 2 minutes
-            let newDelay = lastRandomDelay + Math.floor(Math.random() * 2) + 1;
-
-            lastRandomDelay = newDelay;
-
-            console.log(`Attente supplémentaire de ${newDelay} minute(s) avant exécution du script de vote...`);
-            await sleep(newDelay * 60 * 1000);
 
             now = new Date(); // Mettre à jour l'heure après le délai
 
@@ -221,5 +282,3 @@ let lastRandomDelay = 0;
         });
     };
 })();
-
-//class="mtcap-show-if-nocss" aria-label="image captcha." id="mtcap-image-nocss-1"
