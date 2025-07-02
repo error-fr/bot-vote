@@ -12,6 +12,8 @@ const { sendToDiscord, sendCaptchaToDiscord } = require('./functions/discord.js'
 global.recentIPs = global.recentIPs || [];
 
 async function scriptVote() {
+    let ipAddress = null;
+
     const launchOptions = {
         headless: process.env.HEADLESS === 'true',
         args: [
@@ -27,8 +29,8 @@ async function scriptVote() {
     }
 
     if (process.env.PROXY && process.env.PROXY === 'true') {
-        console.log('Proxy activé, ajout des options de proxy...');
         if (process.env.PROXY_SERVER && process.env.PROXY_SERVER.trim() !== '') {
+            console.log('Proxy activé, ajout des options de proxy...');
             launchOptions.args.push('--proxy-server=' + process.env.PROXY_SERVER);
         } else {
             console.error("PROXY_SERVER n'est pas défini ou est vide dans le fichier .env alors que le proxy est activé.");
@@ -41,6 +43,7 @@ async function scriptVote() {
     const page = await browser.newPage();
 
     if (process.env.PROXY && process.env.PROXY === 'true') {
+        console.log("Proxy configuré. Authentification en cours...");
         await page.authenticate({
             username: process.env.PROXY_USER,
             password: process.env.PROXY_PASSWORD
@@ -92,7 +95,7 @@ async function scriptVote() {
                 return { ip: null };
             }
         });
-        const ipAddress = geoData.ip;
+        ipAddress = geoData.ip;
 
         if (!ipAddress) {
             console.error("Impossible de récupérer l'adresse IP.");
@@ -215,26 +218,23 @@ async function scriptVote() {
         expectedUrl => window.location.href === expectedUrl,
         { timeout: 15000 },
         process.env.URL_VOTE_TOPSERVEURS + '/success'
-    ).then(() => {
-        console.log('Vote validé : page de succès détectée.');
-        sendToDiscord("good", "Vote comptabilisé. Page de succès détectée.");
-
-        if (process.env.PROXY_SAFE_MODE && process.env.PROXY_SAFE_MODE === 'true') {
-            const now = Date.now();
-            global.recentIPs.push({ ip: ipAddress, time: now });
-        }
-    }).catch(async () => {
-        const currentUrl = page.url();
-
-        if (currentUrl === process.env.URL_VOTE_TOPSERVEURS + '/success') {
-            console.error('Vote réussi : page de succès détectée après la deuxième vérification.');
-            await sendToDiscord("good", "Vote comptabilisé. Page de succès détectée (après la deuxième vérification).");
+    ).then(async () => {
+        try {
+            console.log('Vote validé : page de succès détectée.');
+            await sendToDiscord("good", "Vote comptabilisé. Page de succès détectée.");
 
             if (process.env.PROXY_SAFE_MODE && process.env.PROXY_SAFE_MODE === 'true') {
                 const now = Date.now();
                 global.recentIPs.push({ ip: ipAddress, time: now });
+                console.log(`IP ${ipAddress} enregistrée.`);
             }
-        } else if (currentUrl === process.env.URL_VOTE_TOPSERVEURS + '/failed') {
+        } catch (err) {
+            console.error('Vote validé, mais une erreur a été détectée :', err);
+        }
+    }).catch(async () => {
+        const currentUrl = page.url();
+
+        if (currentUrl === process.env.URL_VOTE_TOPSERVEURS + '/failed') {
             console.error('Vote échoué : page d\'erreur détectée.');
             await sendToDiscord("error", "Vote échoué : page d\'erreur détectée.");
         } else {
@@ -330,10 +330,14 @@ let lastRandomDelay = 0;
             now = new Date(); // Mettre à jour l'heure après le délai
 
             console.log(`${now.toLocaleString()} - Exécution du script de vote...`);
-            scriptVote().catch(error => {
-                console.error('Erreur lors de l\'exécution du script de vote :', error);
-                sendToDiscord("error", `Erreur lors de l\'exécution du script de vote :\n${error}`);
-            });
+            scriptVote()
+                .then(() => {
+                    console.log('Exécution du script de vote terminé.');
+                })
+                .catch(error => {
+                    console.error('Erreur lors de l\'exécution du script de vote :', error);
+                    sendToDiscord("error", `Erreur lors de l\'exécution du script de vote :\n${error}`);
+                });
         });
     };
 })();
