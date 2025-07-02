@@ -15,20 +15,21 @@ npm install
 Créez un fichier `.env` et configurez-le avec les informations requises :
 
 ```
-URL_VOTE_TOPSERVEURS='' # L'URL ne doit pas contenir le pseudo, il est à définir ci-dessous
-URL_VOTE_TOPSERVEURS_NAME='BOT' # Pas d'espaces ni de caractères spéciaux
+URL_VOTE_TOPSERVEURS = 'https://top-serveurs.net/gta/vote/evoma' # L'URL ne doit pas contenir le pseudo, il est à définir ci-dessous
+URL_VOTE_TOPSERVEURS_NAME = '' # Pas d'espaces ni de caractères spéciaux
 
-DISCORD_ID='' # ID Discord à ping via les Webhooks en cas d'erreur
-DISCORD_WEBHOOK_URL='' # Webhook utilisé pour envoyer les erreurs
-DISCORD_WEBHOOK_NAME='BOT Vote' # Nom du Webhook
+DISCORD_ID = '' # ID Discord à ping via les Webhooks en cas d'erreur
+DISCORD_WEBHOOK_URL = '' # Webhook utilisé pour envoyer les erreurs
+DISCORD_WEBHOOK_NAME = 'BOT Vote' # Nom du Webhook
 
-CRON_TIME='0 */2 * * *' # Heure d'exécution du cron, ici toutes les 2 heures
-HEADLESS=false # true : Le navigateur sera lancé en mode headless (sans interface graphique), false : avec interface graphique
+CRON_TIME = '0 */2 * * *' # Heure d'exécution du cron : https://crontab.guru/
+TEST_MODE = false # true : Le script sera immédiatement exécuté, false : Le bot votera uniquement selon le cron
+HEADLESS = true # true : Le navigateur sera lancé en mode headless (sans interface graphique), false : avec interface graphique
 EXECUTABLE_PATH = '' # Chemin vers l'exécutable de Chromium, ou laisser vide pour utiliser le chemin par défaut
-TEST_MODE = false # true : Le script sera immédiatement exécuté, puis continuera à s'exécuter selon le cron, false : Le bot votera uniquement selon le cron
-
-AI_MODEL = 'chatgpt' # Modèle d'IA à utiliser, 'chatgpt' ou 'mistral'
-CHATGPT_API_KEY='' # Clé API ChatGPT
+DEFINE_DEFAULT_DELAY = false # true : Le script va demander un délai à définir au démarrage, false : pas de délai aléatoire
+SAFE_MODE = true # true : Le script va attendre un temps aléatoire avant de voter + reset/pause de 3h à 7h, false : pas d'attente / pas de pause
+AI_MODEL = 'mistral' # Modèle d'IA à utiliser pour la résolution du captcha, 'chatgpt' ou 'mistral'
+CHATGPT_API_KEY = '' # Clé API ChatGPT
 MISTRAL_API_KEY = '' # Clé API Mistral
 CHATGPT_PROMPT = "Tu vas passer un test de vue. Une image se trouve en pièce jointe, et comme avec une échelle de Monoyer, ton objectif est d’analyser attentivement l’image et d’identifier avec précision les inscriptions qui y figurent.
     \nNe t'arrête pas non plus à ce que l’analyse automatique (OCR) va détecter, approfondis ton analyse et donne moi le résultat le plus précis possible de ce que tu vois réellement/visuellement.
@@ -37,6 +38,14 @@ CHATGPT_PROMPT = "Tu vas passer un test de vue. Une image se trouve en pièce jo
     \nDonne moi directement le résultat de ton analyse, je veux un résultat concis, sans parole supplémentaire.
     \n\nVoici l'image :" # Prompt à utiliser pour l'IA ChatGPT
 MISTRAL_PROMPT = "Quel est le texte sur l'image ? Donne moi directement le résultat" # Prompt à utiliser pour l'IA Mistral
+
+PROXY = false # true : Le script va utiliser un proxy, false : pas de proxy
+TEST_PROXY = false # true : Test de connexion du proxy dans la console et arrêt du script, false : Pas de test du proxy
+TEST_PROXY_URL = '' # URL de test du proxy
+PROXY_SAFE_MODE = true # true : Le script va enregistrer les proxy utiliser, et passer les proxy en attente de vote, false : pas d'enregistrement des proxy
+PROXY_SERVER = '' # Proxy à utiliser
+PROXY_USER = '' # Nom d'utilisateur du proxy
+PROXY_PASSWORD = '' # Mot de passe du proxy
 ```
 
 ## Installation supplémentaire
