@@ -8,6 +8,9 @@ const { CronExpressionParser } = require('cron-parser');
 const { sleep, mainModule, getUserInput } = require('./functions/main.js');
 const { sendToDiscord, sendCaptchaToDiscord } = require('./functions/discord.js');
 
+// Table globale pour stocker les IPs utilisées récemment
+global.recentIPs = global.recentIPs || [];
+
 async function scriptVote() {
     const launchOptions = {
         headless: process.env.HEADLESS === 'true',
@@ -78,6 +81,39 @@ async function scriptVote() {
         await page.evaluateOnNewDocument(() => {
             Object.defineProperty(navigator, 'webdriver', { get: () => false });
         });
+    }
+
+    if (process.env.PROXY_SAFE_MODE && process.env.PROXY_SAFE_MODE === 'true') {
+        await page.goto(process.env.TEST_PROXY_URL, { waitUntil: 'domcontentloaded' });
+        const geoData = await page.evaluate(() => {
+            try {
+                return JSON.parse(document.body.innerText);
+            } catch (e) {
+                return { ip: null };
+            }
+        });
+        const ipAddress = geoData.ip;
+
+        if (!ipAddress) {
+            console.error("Impossible de récupérer l'adresse IP.");
+            // await sendToDiscord("error", "Impossible de récupérer l'adresse IP.");
+            await browser.close();
+            return;
+        }
+
+        // Nettoyer les IPs plus vieilles que 2h
+        const now = Date.now();
+        global.recentIPs = global.recentIPs.filter(entry => now - entry.time < 2 * 60 * 60 * 1000);
+
+        // Vérifier si l'IP a déjà été utilisée dans les 2 dernières heures
+        if (global.recentIPs.some(entry => entry.ip === ipAddress)) {
+            console.error(`L'adresse IP ${ipAddress} a déjà été utilisée dans les 2 dernières heures.`);
+            // await sendToDiscord("warning", `L'adresse IP ${ipAddress} a déjà été utilisée dans les 2 dernières heures. Vote annulé.`);
+            await browser.close();
+            return;
+        }
+
+        console.log(`Nouvelle IP utilisée par encore enregistrée : ${ipAddress}`);
     }
 
     await page.goto(process.env.URL_VOTE_TOPSERVEURS + '?pseudo=' + process.env.URL_VOTE_TOPSERVEURS_NAME, {
@@ -182,10 +218,23 @@ async function scriptVote() {
     ).then(() => {
         console.log('Vote validé : page de succès détectée.');
         sendToDiscord("good", "Vote comptabilisé. Page de succès détectée.");
+
+        if (process.env.PROXY_SAFE_MODE && process.env.PROXY_SAFE_MODE === 'true') {
+            const now = Date.now();
+            global.recentIPs.push({ ip: ipAddress, time: now });
+        }
     }).catch(async () => {
         const currentUrl = page.url();
 
-        if (currentUrl === 'https://top-serveurs.net/gta/vote/evoma/failed') {
+        if (currentUrl === process.env.URL_VOTE_TOPSERVEURS + '/success') {
+            console.error('Vote réussi : page de succès détectée après la deuxième vérification.');
+            await sendToDiscord("good", "Vote comptabilisé. Page de succès détectée (après la deuxième vérification).");
+
+            if (process.env.PROXY_SAFE_MODE && process.env.PROXY_SAFE_MODE === 'true') {
+                const now = Date.now();
+                global.recentIPs.push({ ip: ipAddress, time: now });
+            }
+        } else if (currentUrl === process.env.URL_VOTE_TOPSERVEURS + '/failed') {
             console.error('Vote échoué : page d\'erreur détectée.');
             await sendToDiscord("error", "Vote échoué : page d\'erreur détectée.");
         } else {
