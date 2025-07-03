@@ -5,7 +5,7 @@ dotenv.config();
 const cron = require('node-cron');
 const { CronExpressionParser } = require('cron-parser');
 
-const { mainModule } = require('./functions/main.js');
+const { mainModule } = require('./functions/main_light.js');
 const { sleep, getUserInput, loadRecentIPs, saveRecentIPs } = require('./functions/functions.js');
 const { sendToDiscord, sendCaptchaToDiscord } = require('./functions/discord.js');
 
@@ -68,7 +68,7 @@ async function scriptVote() {
                 console.log('Connexion au proxy réussie.\nInfos:', geoData);
                 
                 console.log('Test du proxy sur Google...');
-                await page.goto('https://www.google.com', { waitUntil: 'networkidle2', timeout: 10000 });
+                await page.goto('https://www.google.com', { waitUntil: 'domcontentloaded' });
                 console.log("Test du proxy sur Google réussi.");
                 
                 await browser.close();
@@ -87,56 +87,69 @@ async function scriptVote() {
         });
     }
 
-    if (process.env.PROXY_SAFE_MODE && process.env.PROXY_SAFE_MODE === 'true') {
-        await page.goto(process.env.TEST_PROXY_URL, { waitUntil: 'domcontentloaded' });
-        const geoData = await page.evaluate(() => {
+    if (process.env.PROXY_SAFE_MODE === 'true') {
+        ipAddress = await page.evaluate(async (url) => {
             try {
-                return JSON.parse(document.body.innerText);
+                const res = await fetch(url);
+                const json = await res.json();
+                return json.ip || null;
             } catch (e) {
-                return { ip: null };
+                return null;
             }
-        });
-        ipAddress = geoData.ip;
+        }, process.env.TEST_PROXY_URL);
 
         if (!ipAddress) {
             console.error("Impossible de récupérer l'adresse IP.");
-            // await sendToDiscord("error", "Impossible de récupérer l'adresse IP.");
             await browser.close();
             return;
         }
 
-        // Nettoyer les IPs plus vieilles que 2h
         const now = Date.now();
         global.recentIPs = global.recentIPs.filter(entry => now - entry.time < 2 * 60 * 60 * 1000);
 
-        // Vérifier si l'IP a déjà été utilisée dans les 2 dernières heures
         if (global.recentIPs.some(entry => entry.ip === ipAddress)) {
             console.error(`L'adresse IP ${ipAddress} a déjà été utilisée dans les 2 dernières heures.`);
-            // await sendToDiscord("warning", `L'adresse IP ${ipAddress} a déjà été utilisée dans les 2 dernières heures. Vote annulé.`);
             await browser.close();
             return;
         }
 
-        console.log(`Nouvelle IP utilisée par encore enregistrée : ${ipAddress}`);
+        console.log(`Nouvelle IP utilisée, pas encore enregistrée : ${ipAddress}`);
     }
+
+
+    let totalRequests = 0, blockedRequests = 0;
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+    totalRequests++;
+        const resourceType = req.resourceType();
+        const url = req.url();
+
+        if (['image', 'stylesheet', 'font'].includes(resourceType)) {
+            return req.abort();
+        }
+
+        // Tu peux aussi ignorer des domaines tiers (ex. google, facebook)
+        if (url.includes('googletagmanager') || url.includes('facebook') || url.includes('ads')) {
+            return req.abort();
+        }
+
+        req.continue();
+    });
+    page.on('requestfinished', () => {
+    if (blockedRequests > 0) {
+        console.log(`Bloqué ${blockedRequests} sur ${totalRequests} requêtes.`);
+    }
+});
 
     await page.goto(process.env.URL_VOTE_TOPSERVEURS + '?pseudo=' + process.env.URL_VOTE_TOPSERVEURS_NAME, {
-        timeout: 60000 // Timeout de 60 secondes
+        waitUntil: 'domcontentloaded' // Timeout de 60 secondes
     });
-    console.log("Page chargée, en attente de la pop-up cookies...");
-
-    // Validation de la pop-up cookies
-    const cookies = await page.waitForSelector('button.fc-button.fc-cta-consent.fc-primary-button', { timeout: 15000 }).catch(() => null);
-    if (cookies) {
-        await cookies.click();
-    }
-
-    console.log("Pop-up cookies passée. Début de la recherche du captcha...");
+    console.log("Page chargée. Début de la recherche du captcha...");
 
     let mainResult = await mainModule(browser, page);
     let successText, captcha;
     if (typeof mainResult === 'number') {
-        if( process.env.SAFE_MODE && process.env.SAFE_MODE === 'true') {
+        if(process.env.SAFE_MODE && process.env.SAFE_MODE === 'true') {
             console.log(`mainModule a retourné un nombre (${mainResult}), attente de ${mainResult} minutes...`);
             await sleep((mainResult * 60 * 1000)); // Convertir les minutes en millisecondes
             mainResult = await mainModule(browser, page);
