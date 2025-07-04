@@ -116,11 +116,8 @@ async function scriptVote() {
         console.log(`Nouvelle IP utilisée, pas encore enregistrée : ${ipAddress}`);
     }
 
-
-    let totalRequests = 0, blockedRequests = 0;
     await page.setRequestInterception(true);
     page.on('request', (req) => {
-    totalRequests++;
         const resourceType = req.resourceType();
         const url = req.url();
 
@@ -129,17 +126,12 @@ async function scriptVote() {
         }
 
         // Tu peux aussi ignorer des domaines tiers (ex. google, facebook)
-        if (url.includes('googletagmanager') || url.includes('facebook') || url.includes('ads')) {
+        if (url.includes('googletagmanager') || url.includes('facebook') || url.includes('ads') || url.includes('googlesyndication') || url.includes('doubleclick') || url.includes('googleapis')) {
             return req.abort();
         }
 
         req.continue();
     });
-    page.on('requestfinished', () => {
-    if (blockedRequests > 0) {
-        console.log(`Bloqué ${blockedRequests} sur ${totalRequests} requêtes.`);
-    }
-});
 
     await page.goto(process.env.URL_VOTE_TOPSERVEURS + '?pseudo=' + process.env.URL_VOTE_TOPSERVEURS_NAME, {
         waitUntil: 'domcontentloaded' // Timeout de 60 secondes
