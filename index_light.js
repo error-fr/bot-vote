@@ -126,7 +126,7 @@ async function scriptVote() {
         }
 
         // Tu peux aussi ignorer des domaines tiers (ex. google, facebook)
-        if (url.includes('googletagmanager') || url.includes('facebook') || url.includes('ads') || url.includes('googlesyndication') || url.includes('doubleclick') || url.includes('googleapis')) {
+        if (url.includes('google') || url.includes('googletagmanager') || url.includes('facebook') || url.includes('ads') || url.includes('googlesyndication') || url.includes('doubleclick') || url.includes('googleapis')) {
             return req.abort();
         }
 
