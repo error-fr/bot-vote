@@ -318,11 +318,15 @@ let lastRandomDelay = 0;
             console.log(`Cron déclenché à ${now.toLocaleString()}`);
 
             if( process.env.SAFE_MODE && process.env.SAFE_MODE === 'true') {
-                // Si l'heure est entre 3h et 7h, on skip l'exécution et reset le delay
-                if (hour >= 3 && hour < 7) {
-                    console.log("Exécution du script ignorée entre 3h et 7h.");
+                if (process.env.PROXY && process.env.PROXY === 'true') {
                     lastRandomDelay = 0;
-                    return;
+                } else {
+                    // Si l'heure est entre 4h et 6h, on skip l'exécution et reset le delay
+                    if (hour >= 4 && hour < 6) {
+                        console.log("Exécution du script ignorée entre 4h et 6h.");
+                        lastRandomDelay = 0;
+                        return;
+                    }
                 }
 
                 // Générer un délai aléatoire entre 1 et 2 minutes
